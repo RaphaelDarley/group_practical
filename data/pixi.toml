@@ -1,0 +1,16 @@
+[project]
+authors = ["neNasko1 <nasko119@gmail.com>"]
+channels = ["conda-forge"]
+description = "Add a short description here"
+name = "data"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+pandas = ">=2.2.3,<3"
+seaborn = ">=0.13.2,<0.14"
+scikit-learn = ">=1.6.1,<2"
+tk = ">=8.6.13,<9"
+matplotlib = ">=3.10.1,<4"

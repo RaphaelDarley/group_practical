@@ -1,0 +1,3 @@
+[submodule "data/stock2vec"]
+	path = data/stock2vec
+	url = git@github.com:kh-kim/stock2vec.git
