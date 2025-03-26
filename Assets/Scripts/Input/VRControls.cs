@@ -6,9 +6,14 @@ using UnityEngine.InputSystem;
 
 public class VRControls : MonoBehaviour
 {
+    [Header("Controls")]
     public InputActionReference rightThumbstick;
     public InputActionReference rightThumbstickButton;
+    public InputActionReference menuButton;
+
+    [Header("Objects")]
     public Transform player;
+    public GameObject menu;
 
     [Header("Settings")]
     public float turnSpeed = 1.0f;
@@ -19,6 +24,7 @@ public class VRControls : MonoBehaviour
     {
         rightThumbstick.action.performed += RotateCamera;
         rightThumbstickButton.action.started += ResetCamera;
+        menuButton.action.started += ToggleMenu;
     }
 
     // Update is called once per frame
@@ -55,5 +61,14 @@ public class VRControls : MonoBehaviour
             player.eulerAngles += new Vector3(0f, vector.x * turnSpeed);
             player.eulerAngles += new Vector3(-vector.y * turnSpeed, 0f);
         }
+    }
+
+    private bool menuEnabled = true;
+
+    void ToggleMenu(InputAction.CallbackContext context)
+    {
+        menuEnabled = !menuEnabled;
+        menu.SetActive(menuEnabled);
+
     }
 }
