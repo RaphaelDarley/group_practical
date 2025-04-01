@@ -13,7 +13,8 @@ public class VRControls : MonoBehaviour
 
     [Header("Objects")]
     public Transform player;
-    public GameObject menu;
+    public GameObject vrMenu;
+    public Transform vrMenuOffsetPoint;
 
     [Header("Settings")]
     public float turnSpeed = 1.0f;
@@ -30,13 +31,13 @@ public class VRControls : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Vector3 r = player.eulerAngles;
-        player.eulerAngles = new Vector3(r.x, r.y, 0f);
+        //Vector3 r = player.localEulerAngles;
+        //player.localEulerAngles = new Vector3(r.x, r.y, 0f);
     }
 
     void ResetCamera(InputAction.CallbackContext context)
     {
-        player.eulerAngles = Vector3.zero;
+        player.localEulerAngles = Vector3.zero;
     }
 
     void RotateCamera(InputAction.CallbackContext context)
@@ -48,18 +49,18 @@ public class VRControls : MonoBehaviour
             // change yaw
             if (Mathf.Abs(vector.x) >= Mathf.Abs(vector.y))
             {
-                player.eulerAngles += new Vector3(0f, vector.x * turnSpeed);
+                player.localEulerAngles += new Vector3(0f, vector.x * turnSpeed);
             }
             // change pitch
             else
             {
-                player.eulerAngles += new Vector3(-vector.y * turnSpeed, 0f);
+                player.localEulerAngles += new Vector3(-vector.y * turnSpeed, 0f);
             }
         }
         else
         {
-            player.eulerAngles += new Vector3(0f, vector.x * turnSpeed);
-            player.eulerAngles += new Vector3(-vector.y * turnSpeed, 0f);
+            player.localEulerAngles += new Vector3(0f, vector.x * turnSpeed);
+            player.localEulerAngles += new Vector3(-vector.y * turnSpeed, 0f);
         }
     }
 
@@ -68,7 +69,8 @@ public class VRControls : MonoBehaviour
     void ToggleMenu(InputAction.CallbackContext context)
     {
         menuEnabled = !menuEnabled;
-        menu.SetActive(menuEnabled);
-
+        vrMenu.SetActive(menuEnabled);
+        vrMenuOffsetPoint.position = player.position;
+        vrMenuOffsetPoint.rotation = player.rotation;
     }
 }
