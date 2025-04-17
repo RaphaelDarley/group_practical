@@ -1,76 +1,153 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-
+using UnityEngine.XR;
+using UnityEngine.XR.Interaction.Toolkit;
 
 public class VRControls : MonoBehaviour
 {
-    [Header("Controls")]
-    public InputActionReference rightThumbstick;
-    public InputActionReference rightThumbstickButton;
-    public InputActionReference menuButton;
+
+    private InputHandler inputHandler;
+
+
+    [Header("User Objects")]
+    public Transform xrOrigin;
+    public Transform vrCamera;
+
 
     [Header("Objects")]
-    public Transform player;
     public GameObject vrMenu;
     public Transform vrMenuOffsetPoint;
 
     [Header("Settings")]
+    public float moveSpeed = 2.0f;
     public float turnSpeed = 1.0f;
     public bool forceUniaxialTurning = false;
+    public float zoomDistance = 1.0f;
 
     // Start is called before the first frame update
     void Start()
     {
-        rightThumbstick.action.performed += RotateCamera;
-        rightThumbstickButton.action.started += ResetCamera;
-        menuButton.action.started += ToggleMenu;
+        inputHandler = GetComponent<InputHandler>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        //Vector3 r = player.localEulerAngles;
-        //player.localEulerAngles = new Vector3(r.x, r.y, 0f);
+        MovePlayer();
+        RotateCamera();
+        UpdateMenu();
+        UpdateZoom();
+
+        //DebugFunc();
     }
 
-    void ResetCamera(InputAction.CallbackContext context)
+    // move player relative to camera view: forward/strafe directions relative to CAMERA, not xr rig
+    void MovePlayer()
     {
-        player.localEulerAngles = Vector3.zero;
+        inputHandler.leftController.TryReadAxis2DValue(InputHelpers.Axis2D.PrimaryAxis2D, out Vector2 vector);
+
+        xrOrigin.position += moveSpeed * vector.y * 0.05f * vrCamera.forward;
+        xrOrigin.position += moveSpeed * vector.x * 0.05f * vrCamera.right;
     }
 
-    void RotateCamera(InputAction.CallbackContext context)
-    {
-        Vector2 vector = context.ReadValue<Vector2>();
 
+    // keep track of player pitch for pitch clamping
+    private float pitch = 0.0f;
+    public float maxPitch = 45.0f;
+
+    // rotate xr rig globally (not with respect to the camera to prevent rolling)
+    void RotateCamera()
+    {
+        // potentially reset camera
+        if (inputHandler.IsStarted(InputHandler.ControllerButton.RightClick))
+        {
+            xrOrigin.transform.rotation = Quaternion.identity;
+            pitch = 0.0f;
+        }
+
+        Vector2 vector = inputHandler.GetRightAxis();
+        
         if (forceUniaxialTurning)
         {
-            // change yaw
+            // change yaw globally
             if (Mathf.Abs(vector.x) >= Mathf.Abs(vector.y))
             {
-                player.localEulerAngles += new Vector3(0f, vector.x * turnSpeed);
+                float deltaYaw = vector.x * turnSpeed;
+
+                // change yaw globally
+                xrOrigin.transform.Rotate(0f, deltaYaw, 0f, Space.World);
             }
-            // change pitch
+            // change pitch locally
             else
             {
-                player.localEulerAngles += new Vector3(-vector.y * turnSpeed, 0f);
+                float deltaPitch = -vector.y * turnSpeed;
+                deltaPitch = Mathf.Clamp(deltaPitch, -pitch - maxPitch, -pitch + maxPitch);
+                pitch += deltaPitch;
+
+                // change pitch locally
+                xrOrigin.transform.Rotate(deltaPitch, 0f, 0f, Space.Self);
             }
         }
         else
         {
-            player.localEulerAngles += new Vector3(0f, vector.x * turnSpeed);
-            player.localEulerAngles += new Vector3(-vector.y * turnSpeed, 0f);
+            float deltaYaw = vector.x * turnSpeed;
+            float deltaPitch = -vector.y * turnSpeed;
+            deltaPitch = Mathf.Clamp(deltaPitch, -pitch - 45f, -pitch + 45f);
+            pitch += deltaPitch;
+
+            // change yaw globally
+            xrOrigin.transform.Rotate(0f, deltaYaw, 0f, Space.World);
+
+            // change pitch locally
+            xrOrigin.transform.Rotate(deltaPitch, 0f, 0f, Space.Self);
+
         }
     }
 
-    private bool menuEnabled = true;
-
-    void ToggleMenu(InputAction.CallbackContext context)
+    // keep track of whether the menu is showing
+    private bool menuShowing = true;
+    
+    // move menu to player position and toggle on menu button press
+    void UpdateMenu()
     {
-        menuEnabled = !menuEnabled;
-        vrMenu.SetActive(menuEnabled);
-        vrMenuOffsetPoint.position = player.position;
-        vrMenuOffsetPoint.rotation = player.rotation;
+        // move menu to player position
+        vrMenuOffsetPoint.SetPositionAndRotation(xrOrigin.position, xrOrigin.rotation);
+
+        if (inputHandler.IsStarted(InputHandler.ControllerButton.Menu))
+        {
+            menuShowing = !menuShowing;
+
+            vrMenu.GetComponent<CanvasGroup>().alpha = menuShowing ? 1f : 0f;
+            vrMenu.GetComponent<CanvasGroup>().interactable = menuShowing;
+            vrMenu.GetComponent<CanvasGroup>().blocksRaycasts = menuShowing;
+        }
+    }
+
+    private Vector3 originalCameraPosition;
+    void UpdateZoom()
+    {
+        if (inputHandler.IsPressed(InputHandler.ControllerButton.LeftTrigger))
+        {
+            Vector3 forward = vrCamera.forward;
+            Vector3 zoomPosition = originalCameraPosition + forward * zoomDistance;
+            vrCamera.position = zoomPosition;
+        }
+        else
+        {
+            vrCamera.position = originalCameraPosition;
+        }
+    }
+
+
+    void DebugFunc()
+    {
+        inputHandler.rightController.TryReadSingleValue(InputHelpers.Button.Primary2DAxisClick, out float val);
+        if (val > 0f)
+        {
+            Debug.Log(val);
+        }
     }
 }
