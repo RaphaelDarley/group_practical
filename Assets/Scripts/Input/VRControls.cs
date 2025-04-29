@@ -25,6 +25,7 @@ public class VRControls : MonoBehaviour
     public float moveSpeed = 2.0f;
     public float turnSpeed = 1.0f;
     public bool forceUniaxialTurning = false;
+    public bool allowStrafe = true;
     public float zoomDistance = 1.0f;
 
     // Start is called before the first frame update
@@ -50,13 +51,17 @@ public class VRControls : MonoBehaviour
         inputHandler.leftController.TryReadAxis2DValue(InputHelpers.Axis2D.PrimaryAxis2D, out Vector2 vector);
 
         xrOrigin.position += moveSpeed * vector.y * 0.05f * vrCamera.forward;
-        xrOrigin.position += moveSpeed * vector.x * 0.05f * vrCamera.right;
+
+        if (allowStrafe)
+        {
+            xrOrigin.position += moveSpeed * vector.x * 0.05f * vrCamera.right;
+        }
     }
 
 
     // keep track of player pitch for pitch clamping
     private float pitch = 0.0f;
-    public float maxPitch = 45.0f;
+    public float maxPitch = 20.0f;
 
     // rotate xr rig globally (not with respect to the camera to prevent rolling)
     void RotateCamera()
@@ -76,8 +81,6 @@ public class VRControls : MonoBehaviour
             if (Mathf.Abs(vector.x) >= Mathf.Abs(vector.y))
             {
                 float deltaYaw = vector.x * turnSpeed;
-
-                // change yaw globally
                 xrOrigin.transform.Rotate(0f, deltaYaw, 0f, Space.World);
             }
             // change pitch locally
@@ -86,8 +89,6 @@ public class VRControls : MonoBehaviour
                 float deltaPitch = -vector.y * turnSpeed;
                 deltaPitch = Mathf.Clamp(deltaPitch, -pitch - maxPitch, -pitch + maxPitch);
                 pitch += deltaPitch;
-
-                // change pitch locally
                 xrOrigin.transform.Rotate(deltaPitch, 0f, 0f, Space.Self);
             }
         }
@@ -149,5 +150,27 @@ public class VRControls : MonoBehaviour
         {
             Debug.Log(val);
         }
+    }
+
+
+
+    public void ChangeMovementSpeed(float speed)
+    {
+        moveSpeed = speed;
+    }
+
+    public void ChangeTurnSpeed(float speed)
+    {
+        turnSpeed = speed;
+    }
+
+    public void ToggleUniaxialTurning(bool turning)
+    {
+        forceUniaxialTurning = !forceUniaxialTurning;
+    }
+
+    public void ToggleStrafe(bool strafe)
+    {
+        allowStrafe = !allowStrafe;
     }
 }
