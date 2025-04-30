@@ -53,8 +53,13 @@ public class GraphSpawnerCopy : MonoBehaviour
 
     private void RenderGraph(string filepath, GameObject parent)
     {
+        //// Read CSV file
+        TextAsset file = Resources.Load(filepath) as TextAsset;
+        string[] lines = (file.text.TrimEnd()).Split("\n");
+
         // Read CSV file
-        string[] lines = File.ReadAllLines(filepath);
+        //string[] lines = File.ReadAllLines(filepath);
+        //Debug.Log(lines.Length);
 
         // Get indices of relevant column headers
         string[] headers = lines[0].Split(',');

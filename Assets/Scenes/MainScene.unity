@@ -4211,8 +4211,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a672d9fcb435c1499881fa487a97084, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  filepath1: Assets/Data/Stablecoins_dataset.csv
-  filepath2: Assets/Data/dai_only.csv
+  filepath1: GraphData/dai_only
+  filepath2: GraphData/Stablecoins_dataset
   prefab: {fileID: 4818511408352080308, guid: 8091f601aaad17045ad9d66fd4d91552, type: 3}
   gap: 5
   heightscale: 10
