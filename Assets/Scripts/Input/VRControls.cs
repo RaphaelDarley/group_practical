@@ -15,6 +15,7 @@ public class VRControls : MonoBehaviour
     [Header("User Objects")]
     public Transform xrOrigin;
     public Transform vrCamera;
+    public CharacterController sphereCollider;
 
 
     [Header("Objects")]
@@ -22,11 +23,11 @@ public class VRControls : MonoBehaviour
     public Transform vrMenuOffsetPoint;
 
     [Header("Settings")]
-    public float moveSpeed = 2.0f;
-    public float turnSpeed = 1.0f;
-    public bool forceUniaxialTurning = false;
-    public bool allowStrafe = true;
-    public float zoomDistance = 1.0f;
+    public float moveSpeed;
+    public float turnSpeed;
+    public bool forceUniaxialTurning;
+    public bool allowStrafe;
+    public float zoomDistance;
 
     // Start is called before the first frame update
     void Start()
@@ -37,10 +38,13 @@ public class VRControls : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        MovePlayer();
+        if (!isZooming)
+        {
+            MovePlayer();
+        }   
         RotateCamera();
-        UpdateMenu();
         UpdateZoom();
+        UpdateMenu();
 
         //DebugFunc();
     }
@@ -50,12 +54,15 @@ public class VRControls : MonoBehaviour
     {
         inputHandler.leftController.TryReadAxis2DValue(InputHelpers.Axis2D.PrimaryAxis2D, out Vector2 vector);
 
-        xrOrigin.position += moveSpeed * vector.y * 0.05f * vrCamera.forward;
+        Vector3 move = moveSpeed * vector.y * 0.05f * vrCamera.forward;
 
         if (allowStrafe)
         {
-            xrOrigin.position += moveSpeed * vector.x * 0.05f * vrCamera.right;
+            move += moveSpeed * vector.x * 0.05f * vrCamera.right;
         }
+
+        sphereCollider.Move(move);
+        xrOrigin.position = sphereCollider.transform.position;
     }
 
 
@@ -127,21 +134,69 @@ public class VRControls : MonoBehaviour
         }
     }
 
-    private Vector3 originalCameraPosition;
+    private Vector3 originalCameraPosition = Vector3.zero;
+    private bool isZooming = false;
+    private float zoomCoef = 0f;
+    private float zoomSpeed = 0.06f;
     void UpdateZoom()
     {
         if (inputHandler.IsPressed(InputHandler.ControllerButton.LeftTrigger))
         {
-            Vector3 forward = vrCamera.forward;
-            Vector3 zoomPosition = originalCameraPosition + forward * zoomDistance;
-            vrCamera.position = zoomPosition;
+            if (!isZooming)
+            {
+                originalCameraPosition = xrOrigin.transform.position;
+                isZooming = true;
+            }
+            zoomCoef = Mathf.Clamp01(zoomCoef + zoomSpeed);
+            UpdateCameraZoom(true);
+
         }
         else
         {
-            vrCamera.position = originalCameraPosition;
+            zoomCoef = Mathf.Clamp01(zoomCoef - zoomSpeed);
+            if (zoomCoef <= 0f && isZooming)
+            {
+                xrOrigin.transform.position = originalCameraPosition;
+                isZooming = false;
+            }
+            if (isZooming)
+            {
+                UpdateCameraZoom(false);
+            }
+        }
+
+
+    }
+
+    private void UpdateCameraZoom(bool zoomingForward)
+    {
+        // update position
+        Vector3 forward = vrCamera.forward;
+        Vector3 zoomTargetPosition = originalCameraPosition + forward * zoomDistance;
+
+        if (zoomingForward)
+        {
+            Vector3 zoomPosition = Vector3.Slerp(originalCameraPosition, zoomTargetPosition, EaseOutExpo(zoomCoef));
+            xrOrigin.transform.position = zoomPosition;
+        }
+        else
+        {
+            Vector3 zoomPosition = Vector3.Slerp(zoomTargetPosition, originalCameraPosition, EaseOutExpo(1 - zoomCoef));
+            xrOrigin.transform.position = zoomPosition;
         }
     }
 
+    private float EaseOutExpo(float f)
+    {
+        if (f >= 1f)
+        {
+            return 1;
+        }
+        else
+        {
+            return 1 - Mathf.Pow(2, -10 * f);
+        }
+    }
 
     void DebugFunc()
     {
@@ -172,5 +227,15 @@ public class VRControls : MonoBehaviour
     public void ToggleStrafe(bool strafe)
     {
         allowStrafe = !allowStrafe;
+    }
+
+    public void ChangeZoomDistance(float distance)
+    {
+        zoomDistance = distance;
+    }
+
+    public void ChangeCollisionRadius(float radius)
+    {
+        this.GetComponent<CharacterController>().radius = radius;
     }
 }
