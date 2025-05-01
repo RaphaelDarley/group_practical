@@ -7,37 +7,40 @@ using UnityEngine;
 public class GraphSpawnerCopy : MonoBehaviour
 {
     // CSV file to read, treating project directory as root folder
-    public string filepath = "Assets/Data/Stablecoins_dataset.csv";
+    // Can safely reorder columns but must contain "stablecoin" "high" and "low" headers
+    // ! Currently assumes consistent initial timestamp and interval for each coin
+    // ! Data for each coin must be in a continuous block
+    public string Filepath = "Assets/Data/Stablecoins_dataset.csv";
 
-    // Prefab for data points
-    public GameObject prefab;
+    // Material for the graph
+    public Material graphMat;
+
+    // Height scaling (height of value=1)
+    public float GlobalHeightScale = 1;
+
+    // Array of relative heights for each coin, will be multiplied by global height
+    // Useful if coins of different orders of magnitude need to be compared
+    // Extra scales of 1 will be used if more coins than entries
+    public float[] RelativeHeightScale = {1};
 
     // Width between data for different coins
-    public int gap = 5;
-    public int heightscale = 10;
+    public float CoinGap = 5;
 
-    // Function to instantiate a data point at the given coordinates
-    public GameObject MakePoint(float x, float y, float z)
-    {
-        GameObject datapoint = Instantiate(
-            prefab,
-            new Vector3(x,y,z),
-            Quaternion.identity,
-            transform
-        );
-        return datapoint;
-    }
+    // Horizontal gap between data entries
+    public float TimeEntryWidth = 0.2f;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         // Read CSV file
-        string[] lines = File.ReadAllLines(filepath);
+        string[] lines = File.ReadAllLines(Filepath);
 
         // Get indices of relevant column headers
         string[] headers = lines[0].Split(',');
         int timestamp = Array.IndexOf(headers, "timestamp");
-        int open = Array.IndexOf(headers, "open");
+        int high = Array.IndexOf(headers, "high");
+        int low = Array.IndexOf(headers, "low");
         int stablecoin = Array.IndexOf(headers, "stablecoin");
 
         // Get dimensions of csv array, excluding header row
@@ -51,26 +54,71 @@ public class GraphSpawnerCopy : MonoBehaviour
             rows.Add(lines[i].Split(','));
         }
 
-        // Extract initial timestamp
-        float starttime = float.Parse(rows[0][timestamp]);
-
-        //Create array of datapoint game objects
-        GameObject[] datapoints = new GameObject[length];
+        // Generate vertices from rows
+        Vector3[] vertices = new Vector3[length*2];
         string currentcoin = rows[0][stablecoin];
-        int z = 0;
-        int x = 0;
+        float timepos = 0;
+        int coinnum = 0;
+        float coinpos = 0; // Storing separately to avoid unneccessary calculation, but should always equal coinnum*CoinGap
+        float heightscale = GlobalHeightScale*RelativeHeightScale[coinnum];
+        // Iterate through rows
         for (int i = 0; i < length; i++) 
         {
             string[] row = rows[i];
+        // Reset timepos and move to next coinpos if coin has changed
             if (row[stablecoin]!=currentcoin)
             {
-                z = z+gap;
-                x = 0;
+                coinnum ++;
+                coinpos = coinpos+CoinGap;
+                timepos = 0;
                 currentcoin = row[stablecoin];
+                try
+                {
+                    heightscale = GlobalHeightScale*RelativeHeightScale[coinnum];
+                }
+                catch
+                {
+                    heightscale = GlobalHeightScale;
+                }
             }
-            float y = float.Parse(row[open])*heightscale;
-            datapoints[i] = MakePoint(x,y,z);
-            x++;
+        // Read and scale high and low values for time interval
+            float h = float.Parse(row[high])*heightscale;
+            float l = float.Parse(row[low])*heightscale;
+        // Create vertices for high and low point
+            vertices[2*i] = new Vector3(timepos,h,coinpos);
+            vertices[2*i+1] = new Vector3(timepos,l,coinpos);
+        // Move x position
+            timepos = timepos+TimeEntryWidth;
         }
+
+        // Turn vertices into triangles
+        int[] triangles = new int[length*12-6];
+        for (int i=0; i<(length*2-2); i++)
+        {
+            triangles[6*i] = i;
+            triangles[6*i+1] = i+1;
+            triangles[6*i+2] = i+2;
+            triangles[6*i+3] = i+2;
+            triangles[6*i+4] = i+1;
+            triangles[6*i+5] = i;
+        }
+
+        foreach (var item in vertices)
+        {
+            Console.Write($" ==> {item}");
+        }
+        foreach (var item in triangles)
+        {
+            Console.Write($" ==> {item}");
+        }
+
+        // Render mesh
+        var meshFilter = gameObject.AddComponent<MeshFilter>();
+        var meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        Mesh mesh = new Mesh();
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        meshFilter.sharedMesh = mesh;
+        meshRenderer.material = graphMat;
     }
 }

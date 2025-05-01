@@ -406,8 +406,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a672d9fcb435c1499881fa487a97084, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  filepath: Assets/Data/dai_only.csv
+  filepath: Assets/Data/Stablecoins_dataset.csv
   prefab: {fileID: 4818511408352080308, guid: 3bc5f085d2cb6f445a0c1a0a3d78b3b4, type: 3}
+  gap: 5
+  heightscale: 10
 --- !u!4 &550720548
 Transform:
   m_ObjectHideFlags: 0
