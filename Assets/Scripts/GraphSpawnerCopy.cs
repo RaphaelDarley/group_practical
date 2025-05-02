@@ -15,6 +15,10 @@ public class GraphSpawnerCopy : MonoBehaviour
     // Material for the graph
     public Material graphMat;
 
+    // Prefabs for positive and negative event markers
+    public GameObject PosPrefab;
+    public GameObject NegPrefab;
+
     // Minimum line width to ensure it's actually visible even if it would have zero width
     public float MinLineThickness = 0.05f;
 
@@ -49,6 +53,7 @@ public class GraphSpawnerCopy : MonoBehaviour
         int high = Array.IndexOf(headers, "high");
         int low = Array.IndexOf(headers, "low");
         int stablecoin = Array.IndexOf(headers, "stablecoin");
+        int event_result = Array.IndexOf(headers, "event_result");
 
         // Get dimensions of csv array, excluding header row
         int length = lines.Length-1;
@@ -61,9 +66,10 @@ public class GraphSpawnerCopy : MonoBehaviour
             rows.Add(lines[i].Split(','));
         }
 
-        // Generate vertices and triangles from rows
+        // Generate vertices, triangles and event markers from rows
         Vector3[] vertices = new Vector3[length*2]; //Coordinates of high and low values for each timestamp and coin
         int[] triangles = new int[length*12];       //Joining high and low points of adjacent timestamps with quadrilaterals. Will have a few trailing zeros left at the end, but just creates extra triangles with zero area so won't render
+        List<GameObject> events = new List<GameObject>();   //Store references to event marker objects
         string currentcoin = rows[0][stablecoin];   //Name of current coin so we can see when it's changed
         float timepos = 0;                          //x coordinate, equals (current_timestamp - initial_timestamp)*TimeEntryWidth/400
         int coinnum = 0;                            //Counts how many different coins we've done, used for fetching relative scaling data
@@ -114,6 +120,25 @@ public class GraphSpawnerCopy : MonoBehaviour
                 triangles[12*i+9] = 2*i+1;
                 triangles[12*i+10] = 2*i;
                 triangles[12*i+11] = 2*i-1;
+            }
+        // If event at this timestamp, add marker
+            if (row[event_result]=="positive")
+            {
+                events.Add(Instantiate(
+                    PosPrefab,
+                    vertices[2*i],          //Place marker centred at top of line. May change later
+                    Quaternion.identity,
+                    transform
+                ));
+            }
+            if (row[event_result]=="negative")
+            {
+                events.Add(Instantiate(
+                    NegPrefab,
+                    vertices[2*i],
+                    Quaternion.identity,
+                    transform
+                ));
             }
         // Move x position
             timepos = timepos+TimeEntryWidth;
