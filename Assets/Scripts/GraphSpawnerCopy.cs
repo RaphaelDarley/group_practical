@@ -15,13 +15,20 @@ public class GraphSpawnerCopy : MonoBehaviour
     // Material for the graph
     public Material graphMat;
 
+    // Minimum line width to ensure it's actually visible even if it would have zero width
+    public float MinLineThickness = 0.05f;
+
     // Height scaling (height of value=1)
     public float GlobalHeightScale = 1;
 
     // Array of relative heights for each coin, will be multiplied by global height
     // Useful if coins of different orders of magnitude need to be compared
     // Extra scales of 1 will be used if more coins than entries
+    // ! Must contain at least one entry
     public float[] RelativeHeightScale = {1};
+
+    // Height of 0 value, used to translate all data up or down for easier view
+    public float HeightZero = 0;
 
     // Width between data for different coins
     public float CoinGap = 5;
@@ -54,13 +61,14 @@ public class GraphSpawnerCopy : MonoBehaviour
             rows.Add(lines[i].Split(','));
         }
 
-        // Generate vertices from rows
-        Vector3[] vertices = new Vector3[length*2];
-        string currentcoin = rows[0][stablecoin];
-        float timepos = 0;
-        int coinnum = 0;
-        float coinpos = 0; // Storing separately to avoid unneccessary calculation, but should always equal coinnum*CoinGap
-        float heightscale = GlobalHeightScale*RelativeHeightScale[coinnum];
+        // Generate vertices and triangles from rows
+        Vector3[] vertices = new Vector3[length*2]; //Coordinates of high and low values for each timestamp and coin
+        int[] triangles = new int[length*12];       //Joining high and low points of adjacent timestamps with quadrilaterals. Will have a few trailing zeros left at the end, but just creates extra triangles with zero area so won't render
+        string currentcoin = rows[0][stablecoin];   //Name of current coin so we can see when it's changed
+        float timepos = 0;                          //x coordinate, equals (current_timestamp - initial_timestamp)*TimeEntryWidth/400
+        int coinnum = 0;                            //Counts how many different coins we've done, used for fetching relative scaling data
+        float coinpos = 0;                          //z coordinate. equals coinnum*CoinGap (storing separately to avoid repeat calculation)
+        float heightscale = GlobalHeightScale*RelativeHeightScale[coinnum]; //Height multiplier for current coin. By default RelativeHeightScale will contain at least one entry so shouldn't throw an error
         // Iterate through rows
         for (int i = 0; i < length; i++) 
         {
@@ -82,35 +90,37 @@ public class GraphSpawnerCopy : MonoBehaviour
                 }
             }
         // Read and scale high and low values for time interval
-            float h = float.Parse(row[high])*heightscale;
-            float l = float.Parse(row[low])*heightscale;
+            float h = float.Parse(row[high])*heightscale+HeightZero;
+            float l = float.Parse(row[low])*heightscale+HeightZero;
+            if (h==l) 
+            {
+                l = h-MinLineThickness;
+            }
         // Create vertices for high and low point
             vertices[2*i] = new Vector3(timepos,h,coinpos);
             vertices[2*i+1] = new Vector3(timepos,l,coinpos);
+        // If not the start of a new coin, connect to previous vertices with triangles
+            if (timepos>0)
+            {
+                triangles[12*i] = 2*i-2;         // Can prob improve with iteration
+                triangles[12*i+1] = 2*i-1;
+                triangles[12*i+2] = 2*i;
+                triangles[12*i+3] = 2*i;
+                triangles[12*i+4] = 2*i-1;
+                triangles[12*i+5] = 2*i-2;
+                triangles[12*i+6] = 2*i-1;     
+                triangles[12*i+7] = 2*i;
+                triangles[12*i+8] = 2*i+1;
+                triangles[12*i+9] = 2*i+1;
+                triangles[12*i+10] = 2*i;
+                triangles[12*i+11] = 2*i-1;
+            }
         // Move x position
             timepos = timepos+TimeEntryWidth;
         }
 
-        // Turn vertices into triangles
-        int[] triangles = new int[length*12-6];
-        for (int i=0; i<(length*2-2); i++)
-        {
-            triangles[6*i] = i;
-            triangles[6*i+1] = i+1;
-            triangles[6*i+2] = i+2;
-            triangles[6*i+3] = i+2;
-            triangles[6*i+4] = i+1;
-            triangles[6*i+5] = i;
-        }
 
-        foreach (var item in vertices)
-        {
-            Console.Write($" ==> {item}");
-        }
-        foreach (var item in triangles)
-        {
-            Console.Write($" ==> {item}");
-        }
+        foreach (Vector3 vertex in vertices) {print(vertex);}
 
         // Render mesh
         var meshFilter = gameObject.AddComponent<MeshFilter>();
