@@ -32,10 +32,10 @@ MonoBehaviour:
     m_Value: 1
   gaussianStart:
     m_OverrideState: 1
-    m_Value: 10
+    m_Value: 5.7
   gaussianEnd:
     m_OverrideState: 1
-    m_Value: 30
+    m_Value: 25.33
   gaussianMaxRadius:
     m_OverrideState: 1
     m_Value: 1

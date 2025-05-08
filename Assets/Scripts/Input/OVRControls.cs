@@ -47,6 +47,15 @@ public class OVRControls : MonoBehaviour
     // Move user relative to the plane spanned by the camera view
     void MoveUser()
     {
+
+        // potentially reset camera and position
+        if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick))
+        {
+            vrUser.position = Vector3.zero;
+            vrUser.rotation = Quaternion.identity;
+            pitch = 0.0f;
+        }
+
         Vector2 vector = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick);
 
         Vector3 move = moveSpeed * vector.y * 0.05f * vrCamera.forward;
@@ -56,7 +65,7 @@ public class OVRControls : MonoBehaviour
             move += moveSpeed * vector.x * 0.05f * vrCamera.right;
         }
 
-        // move += UpdateElevation() * 0.05f;
+        move += UpdateElevation() * 0.05f;
 
         vrUser.position += move;
 
@@ -87,12 +96,6 @@ public class OVRControls : MonoBehaviour
     // rotate xr rig globally (not with respect to the camera to prevent rolling)
     void RotateCamera()
     {
-        // potentially reset camera
-        //if (OVRInput.Get(OVRInput.Button.Three, OVRInput.Controller.RTouch))
-        //    {
-        //    vrUser.rotation = Quaternion.identity;
-        //    pitch = 0.0f;
-        //}
 
         Vector2 vector = OVRInput.Get(OVRInput.Axis2D.SecondaryThumbstick);
 
