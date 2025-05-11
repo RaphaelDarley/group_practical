@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6780068278555383941
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7566426224085254714}
+  - component: {fileID: 763542528442789892}
+  m_Layer: 0
+  m_Name: GraphSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7566426224085254714
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6780068278555383941}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &763542528442789892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6780068278555383941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40b1065eb13f16e4291a16dc3386c816, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stablecoinFilepath: GraphData/Stablecoins_dataset
+  transactionFilepath: GraphData/Wluna_transfers
+  graphMat: {fileID: 2100000, guid: 7bd6fa8b2f881e942a1157bfe6e0ac05, type: 2}
+  NodePrefab: {fileID: 829369215713706551, guid: 69179fa97e67ca147a763430b659e129, type: 3}
+  EdgePrefab: {fileID: 2311644509480456993, guid: 185c27318d3b10d46a53b777d41e6d2f, type: 3}
+  PosPrefab: {fileID: 4818511408352080308, guid: 3bc5f085d2cb6f445a0c1a0a3d78b3b4, type: 3}
+  NegPrefab: {fileID: 4818511408352080308, guid: 01c52182625a3b84faabd8046af21677, type: 3}
+  TimestampText: {fileID: 0}
+  MinLineThickness: 0.01
+  GlobalHeightScale: 100
+  RelativeHeightScale:
+  - 1
+  - 0.01
+  HeightZero: 0
+  CoinGap: 5
+  TimeEntryWidth: 0.2
+  nodeSize: 0.005
+  edgeThickness: 0.003

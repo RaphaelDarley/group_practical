@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,7 +23,7 @@ public class UnifiedGraphSpawner : MonoBehaviour
     public GameObject NegPrefab;
 
     // === UI ELEMENT FOR TIMESTAMP DISPLAY ===
-    public Text TimestampText;
+    public TextMeshProUGUI TimestampText;
 
     // === STABLECOIN GRAPH SETTINGS ===
     public float MinLineThickness = 0.05f;
@@ -42,6 +43,11 @@ public class UnifiedGraphSpawner : MonoBehaviour
     private List<GameObject> currentEdges = new List<GameObject>();
 
     private Coroutine timeStepCoroutine;
+
+
+    public string first;
+    public string last;
+    public int debug;
 
     // === VARIABLE FOR PAUSING/RESUMING THE GRAPH ANIMATION ===
     private bool isRunning = true;
@@ -207,6 +213,11 @@ public class UnifiedGraphSpawner : MonoBehaviour
     IEnumerator StepThroughTime(Dictionary<DateTime, List<Transaction>> groupedByTime)
     {
         List<DateTime> sortedDates = new List<DateTime>(groupedByTime.Keys);
+
+        first = sortedDates.First().ToString();
+        last = sortedDates.Last().ToString();
+        debug = sortedDates.Count;
+
         sortedDates.Sort();
 
         // Loop through each day, showing all edges for that day
@@ -261,7 +272,7 @@ public class UnifiedGraphSpawner : MonoBehaviour
 
             edge.transform.position = (senderPos + receiverPos) / 2f;
             edge.transform.up = direction.normalized;
-            edge.transform.localScale = new Vector3(scaleFactor, distance / 2f, scaleFactor);
+            edge.transform.localScale = new Vector3(scaleFactor, distance /* / 2f */, scaleFactor);
 
             currentEdges.Add(edge);
         }
@@ -309,9 +320,9 @@ public class UnifiedGraphSpawner : MonoBehaviour
 
 
 
-    public void ToggleRunning()
+    public void ToggleRunning(bool val)
     {
-        isRunning = !isRunning;
+        isRunning = val;
 
         if (isRunning && timeStepCoroutine == null)
         {
@@ -348,21 +359,5 @@ public class UnifiedGraphSpawner : MonoBehaviour
     Vector3 GetRandomPosition()
     {
         return new Vector3(UnityEngine.Random.Range(-10f,-2f), UnityEngine.Random.Range(-1f, 3f), UnityEngine.Random.Range(0.5f, 10f));
-    }
-}
-
-public class Transaction
-{
-    public string sender;
-    public string receiver;
-    public float amount;
-    public DateTime timestamp;
-
-    public Transaction(string sender, string receiver, float amount, DateTime timestamp)
-    {
-        this.sender = sender;
-        this.receiver = receiver;
-        this.amount = amount;
-        this.timestamp = timestamp;
     }
 }
