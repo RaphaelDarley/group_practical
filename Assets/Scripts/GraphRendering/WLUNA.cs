@@ -8,6 +8,7 @@ using UnityEngine;
 using static OVRPlugin;
 using UnityEngine.Rendering;
 using UnityEngine.Assertions;
+using System.Runtime.CompilerServices;
 
 
 public class Transaction
@@ -66,11 +67,6 @@ public class WLUNABatchData
 
 public class WLUNABatchMatrices
 {
-    //public List<Matrix4x4> dNodeMats;
-    //public List<Matrix4x4> rNodeMats;
-    //public List<Matrix4x4> sNodeMats;
-    //public List<Matrix4x4> edgeMats;
-
     public Matrix4x4[] dNodeMats;
     public Matrix4x4[] sNodeMats;
     public Matrix4x4[] rNodeMats;
@@ -82,11 +78,6 @@ public class WLUNABatchMatrices
 
     public WLUNABatchMatrices(int N, int E)
     {
-        //dNodeMats = new List<Matrix4x4>(N);
-        //sNodeMats = new List<Matrix4x4>(N);
-        //rNodeMats = new List<Matrix4x4>(N);
-        //edgeMats = new List<Matrix4x4>(E);
-
         dNodeMats = new Matrix4x4[N];
         sNodeMats = new Matrix4x4[N];
         rNodeMats = new Matrix4x4[N];
@@ -169,13 +160,13 @@ public class WLUNA : MonoBehaviour
     private List<Transaction> transactions = new List<Transaction>();
     private Dictionary<string, WLUNANode> nodes = new Dictionary<string, WLUNANode>();
     private Dictionary<UnorderedPair<WLUNANode>, WLUNAEdge> edges = new();
+    private List<DateTime> sortedDates;
 
     private WLUNABatchData graphBatchData = new WLUNABatchData();
     private WLUNABatchMatrices batchMatrices;
 
     // Most to be filled in at runtime
     [Header("Time Variables")]
-    private int numDays;
     private float graphTime = 0;
     private int currentDay = 0;
     public float timeSpeed;
@@ -197,18 +188,12 @@ public class WLUNA : MonoBehaviour
         }
 
         InitialiseWLUNA();
+        UpdateLabel();
     }
 
     // Update is called once per frame
     void Update()
     {
-        graphTime += Time.deltaTime;
-        if (graphTime > timeLength)
-        {
-            graphTime = 0f;
-            currentDay = (currentDay + 1) % 16;
-        }
-
         RenderGraph();
     }
 
@@ -352,6 +337,7 @@ public class WLUNA : MonoBehaviour
             dayIndex++;
         }
 
+        this.sortedDates = sortedDates;
         InitialiseBatchData(sortedDates, groupedByTime);
     }
 
@@ -413,9 +399,6 @@ public class WLUNA : MonoBehaviour
         int N = graphBatchData.nodePos.Count;
         int E = graphBatchData.edgePos.Count;
 
-        Debug.LogError(N);
-        Debug.LogError(E);
-
         batchMatrices = new WLUNABatchMatrices(N, E);
     }
 
@@ -428,11 +411,10 @@ public class WLUNA : MonoBehaviour
 
     Vector3 GetRandomPosition()
     {
-        return new Vector3(UnityEngine.Random.Range(-10f, -2f), UnityEngine.Random.Range(-1f, 3f), UnityEngine.Random.Range(0.5f, 10f));
+        //return new Vector3(UnityEngine.Random.Range(-10f, -2f), UnityEngine.Random.Range(-1f, 3f), UnityEngine.Random.Range(0.5f, 10f));
+        Vector3 pos = UnityEngine.Random.insideUnitSphere * 10f;
+        return pos + 6f * Vector3.left;
     }
-
-
-
 
 
     void RenderGraph()
@@ -475,6 +457,41 @@ public class WLUNA : MonoBehaviour
         Graphics.DrawMeshInstanced(nodeMesh, 0, greenMat, batchMatrices.rNodeMats, N,null, ShadowCastingMode.Off);
         Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, batchMatrices.sNodeMats, N, null, ShadowCastingMode.Off);
         //Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, graphBatchData.sNodes[currentDay]);
+    }
+
+
+    public void IncrementTime()
+    {
+        graphTime += Time.deltaTime;
+
+        if (graphTime > timeLength)
+        {
+            graphTime = 0f;
+            currentDay = (currentDay + 1) % 16;
+            UpdateLabel();
+        }
+    }
+
+    public void DecrementTime()
+    {
+        graphTime -= Time.deltaTime;
+
+        if (graphTime < 0f)
+        {
+            graphTime = timeLength;
+            currentDay--;
+            if (currentDay < 0)
+            {
+                currentDay = 15;
+            }
+            UpdateLabel();
+        }
+    }
+
+    private void UpdateLabel()
+    {
+        string time = sortedDates[currentDay].ToString("dd-mm-yyyy");
+        timeLabel.text = time;
     }
 }
 
@@ -538,4 +555,3 @@ public class UnorderedPair<T> : IEquatable<UnorderedPair<T>>
     }
 }
 #nullable disable
-

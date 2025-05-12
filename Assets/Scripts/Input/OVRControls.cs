@@ -13,6 +13,8 @@ public class OVRControls : MonoBehaviour
     public GameObject vrMenu;
     public Transform vrMenuPosition;
 
+    public GameObject wlunaGraph;
+
     [Header("Settings")]
     public float moveSpeed;
     public float turnSpeed;
@@ -37,6 +39,8 @@ public class OVRControls : MonoBehaviour
 
         RotateCamera();
         UpdateZoom();
+
+        UpdateWLUNA();
 
         UpdateMenu();
     }
@@ -226,6 +230,26 @@ public class OVRControls : MonoBehaviour
             vrMenu.SetActive(menuShowing);
         }
     }
+
+
+    // ====================================== DIRECT GRAPH INTERACTIONS ========================================
+
+    private void UpdateWLUNA()
+    {
+        if (OVRInput.Get(OVRInput.Button.Four))
+        {
+            wlunaGraph.GetComponent<WLUNA>().IncrementTime();
+        }
+        else if (OVRInput.Get(OVRInput.Button.Three))
+        {
+            wlunaGraph.GetComponent<WLUNA>().DecrementTime();
+        }
+    }
+
+
+
+
+    // ==========================================================================================================
 
     public void ChangeMovementSpeed(float speed)
     {
