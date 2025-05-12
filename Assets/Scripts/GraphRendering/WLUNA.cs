@@ -7,6 +7,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using static OVRPlugin;
 using UnityEngine.Rendering;
+using UnityEngine.Assertions;
 
 
 public class Transaction
@@ -28,27 +29,72 @@ public class Transaction
 
 public class WLUNABatchData
 {
-    public List<Matrix4x4>[] edges;
-    public List<Matrix4x4>[] dNodes;
-    public List<Matrix4x4>[] sNodes;
-    public List<Matrix4x4>[] rNodes;
+    public List<float>[] edgeScales;
+    public List<float>[] dNodes;
+    public List<float>[] sNodes;
+    public List<float>[] rNodes;
+
+    public List<Vector3> nodePos;
+    public List<Quaternion> nodeRot;
+    public List<Vector3> edgePos;
+    public List<float> edgeLengths;
+    public List<Quaternion> edgeRot;
 
     public WLUNABatchData()
     {
-        this.edges = new List<Matrix4x4>[16];
-        this.dNodes = new List<Matrix4x4>[16];
-        this.sNodes = new List<Matrix4x4>[16];
-        this.rNodes = new List<Matrix4x4>[16];
+        edgeScales = new List<float>[16];
+        dNodes = new List<float>[16];
+        rNodes = new List<float>[16];
+        sNodes = new List<float>[16];
+        nodePos = new List<Vector3>();
+        nodeRot = new List<Quaternion>();
+        edgePos = new List<Vector3>();
+        edgeLengths = new List<float>();
+        edgeRot = new List<Quaternion>();
 
-        for(int i = 0; i < 16; i++)
+
+        for (int i = 0; i < 16; i++)
         {
-            edges[i] = new();
+            edgeScales[i] = new();
             dNodes[i] = new();
             sNodes[i] = new();
             rNodes[i] = new();
         }
     }
 
+}
+
+public class WLUNABatchMatrices
+{
+    //public List<Matrix4x4> dNodeMats;
+    //public List<Matrix4x4> rNodeMats;
+    //public List<Matrix4x4> sNodeMats;
+    //public List<Matrix4x4> edgeMats;
+
+    public Matrix4x4[] dNodeMats;
+    public Matrix4x4[] sNodeMats;
+    public Matrix4x4[] rNodeMats;
+    public Matrix4x4[] edgeMats;
+
+
+    public int N;
+    public int E;
+
+    public WLUNABatchMatrices(int N, int E)
+    {
+        //dNodeMats = new List<Matrix4x4>(N);
+        //sNodeMats = new List<Matrix4x4>(N);
+        //rNodeMats = new List<Matrix4x4>(N);
+        //edgeMats = new List<Matrix4x4>(E);
+
+        dNodeMats = new Matrix4x4[N];
+        sNodeMats = new Matrix4x4[N];
+        rNodeMats = new Matrix4x4[N];
+        edgeMats = new Matrix4x4[E];
+
+        this.N = N;
+        this.E = E;
+    }
 }
 
 public class WLUNANode
@@ -73,20 +119,19 @@ public class WLUNAEdge
     public Vector3 midpoint;
     public Quaternion rotation;
     public float[] scales;
-    public float[] lengths;
+    public float length;
 
     public WLUNAEdge(Vector3 midpoint, Vector3 up)
     {
         this.midpoint = midpoint;
         this.rotation = Quaternion.FromToRotation(Vector3.up, up);
         this.scales = new float[16];
-        this.lengths = new float[16];
     }
 
     public void SetScale(int day, float scale, float length)
     {
         scales[day] = scale;
-        lengths[day] = length;
+        this.length = length;
     }
 }
 
@@ -118,7 +163,6 @@ public class WLUNA : MonoBehaviour
     [Header("Settings")]
     public float nodeSize;
     public float edgeThickness;
-    public float timeSpeed;
 
 
     [Header("Utilities")]
@@ -127,18 +171,22 @@ public class WLUNA : MonoBehaviour
     private Dictionary<UnorderedPair<WLUNANode>, WLUNAEdge> edges = new();
 
     private WLUNABatchData graphBatchData = new WLUNABatchData();
-
+    private WLUNABatchMatrices batchMatrices;
 
     // Most to be filled in at runtime
     [Header("Time Variables")]
     private int numDays;
-    private float time = 0;
+    private float graphTime = 0;
     private int currentDay = 0;
+    public float timeSpeed;
+    private float timeLength;
 
 
     // Start is called before the first frame update
     void Start()
     {
+        timeLength = 1f / timeSpeed;
+
         if (greenMat == null | redMat == null | defaultMat == null)
         {
             Debug.Log("One or more materials is null");
@@ -154,10 +202,10 @@ public class WLUNA : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        time += Time.deltaTime;
-        if (time > 2f)
+        graphTime += Time.deltaTime;
+        if (graphTime > timeLength)
         {
-            time = 0f;
+            graphTime = 0f;
             currentDay = (currentDay + 1) % 16;
         }
 
@@ -287,6 +335,7 @@ public class WLUNA : MonoBehaviour
 
                 Vector3 edgePos = (senderPos + receiverPos) / 2f;
                 Vector3 edgeUp = direction.normalized;
+                
                 float edgeScale = Mathf.Clamp(tx.amount / 1500f, 0.01f, 0.03f);
                 float edgeLength = distance;
 
@@ -308,32 +357,38 @@ public class WLUNA : MonoBehaviour
 
 
 
-    // SINGLE BATCH, NO TWEEN POSSIBILITY, REFACTOR
     private void InitialiseBatchData(List<DateTime> sortedDates, Dictionary<DateTime, List<Transaction>> groupedByTime)
     {
         // node data
         foreach (WLUNANode node in nodes.Values)
         {
             Vector3 pos = node.position;
+            Quaternion rot = UnityEngine.Random.rotation;
+            graphBatchData.nodePos.Add(pos);
+            graphBatchData.nodeRot.Add(rot);
             for (int day = 0; day < 16; day++)
             {
                 if (node.states[day] == WLUNAState.Default)
                 {
-                    Matrix4x4 matrix = Matrix4x4.TRS(pos, Quaternion.identity, 0.05f * Vector3.one);
-                    graphBatchData.dNodes[day].Add(matrix);
+                    //Matrix4x4 matrix = Matrix4x4.TRS(pos, rot, 0.05f * Vector3.one);
+                    graphBatchData.dNodes[day].Add(0.05f);
+                    graphBatchData.sNodes[day].Add(0f);
+                    graphBatchData.rNodes[day].Add(0f);
+                }
+
+                //Matrix4x4 matrix = Matrix4x4.TRS(pos, Quaternion.identity, 0.07f * Vector3.one);
+                else if (node.states[day] == WLUNAState.Sender)
+                {
+                    graphBatchData.sNodes[day].Add(0.07f);
+                    graphBatchData.dNodes[day].Add(0f);
+                    graphBatchData.rNodes[day].Add(0f);
                 }
                 else
                 {
-                    Matrix4x4 matrix = Matrix4x4.TRS(pos, Quaternion.identity, 0.07f * Vector3.one);
-                    if (node.states[day] == WLUNAState.Sender)
-                    {
-                        graphBatchData.sNodes[day].Add(matrix);
-                    }
-                    else
-                    {
-                        graphBatchData.rNodes[day].Add(matrix);
-                    }
-                }
+                    graphBatchData.rNodes[day].Add(0.07f);
+                    graphBatchData.sNodes[day].Add(0f);
+                    graphBatchData.dNodes[day].Add(0f);
+                }   
                 
             }
         }
@@ -343,16 +398,25 @@ public class WLUNA : MonoBehaviour
         {
             Vector3 pos = edge.midpoint;
             Quaternion rot = edge.rotation;
+
+            graphBatchData.edgePos.Add(pos);
+            graphBatchData.edgeLengths.Add(edge.length);
+            graphBatchData.edgeRot.Add(rot);
+
             for (int day = 0; day < 16; day++)
             {
                 float scale = edge.scales[day];
-                float length = edge.lengths[day];
-                if (scale > 0f)
-                {
-                    graphBatchData.edges[day].Add(Matrix4x4.TRS(pos, rot, new Vector3(scale, length /* /2f */, scale))); // divide length by 2 if using cylinder mesh
-                }
+                graphBatchData.edgeScales[day].Add(scale);
             }
         }
+
+        int N = graphBatchData.nodePos.Count;
+        int E = graphBatchData.edgePos.Count;
+
+        Debug.LogError(N);
+        Debug.LogError(E);
+
+        batchMatrices = new WLUNABatchMatrices(N, E);
     }
 
 
@@ -373,11 +437,44 @@ public class WLUNA : MonoBehaviour
 
     void RenderGraph()
     {
+        // tween data
+        float t = graphTime / timeLength;
+        int nextDay = (currentDay + 1) % 16;
 
-        Graphics.DrawMeshInstanced(edgeMesh, 0, defaultMat, graphBatchData.edges[currentDay]);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, defaultMat, graphBatchData.dNodes[currentDay]);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, greenMat, graphBatchData.rNodes[currentDay]);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, graphBatchData.sNodes[currentDay]);
+        int N = batchMatrices.N;
+        int E = batchMatrices.E;
+
+        // nodes
+        for (int i = 0; i < N; i++)
+        {
+            Vector3 pos = graphBatchData.nodePos[i];
+            Quaternion rot = graphBatchData.nodeRot[i];
+            float dScale = (1 - t) * graphBatchData.dNodes[currentDay][i] + t * graphBatchData.dNodes[nextDay][i];
+            float sScale = (1 - t) * graphBatchData.sNodes[currentDay][i] + t * graphBatchData.sNodes[nextDay][i];
+            float rScale = (1 - t) * graphBatchData.rNodes[currentDay][i] + t * graphBatchData.rNodes[nextDay][i];
+
+
+            batchMatrices.dNodeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(dScale, dScale, dScale));
+            batchMatrices.sNodeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(sScale, sScale, sScale));
+            batchMatrices.rNodeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(rScale, rScale, rScale));
+        }
+
+        // edges
+        for (int i = 0; i < E; i++)
+        {
+            Vector3 pos = graphBatchData.edgePos[i];
+            Quaternion rot = graphBatchData.edgeRot[i];
+            float length = graphBatchData.edgeLengths[i];
+            float scale = (1 - t) * graphBatchData.edgeScales[currentDay][i] + t * graphBatchData.edgeScales[nextDay][i];
+
+            batchMatrices.edgeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(scale, length, scale));
+        }
+
+        Graphics.DrawMeshInstanced(edgeMesh, 0, defaultMat, batchMatrices.edgeMats, E, null, ShadowCastingMode.Off);
+        Graphics.DrawMeshInstanced(nodeMesh, 0, defaultMat, batchMatrices.dNodeMats, N, null, ShadowCastingMode.Off);
+        Graphics.DrawMeshInstanced(nodeMesh, 0, greenMat, batchMatrices.rNodeMats, N,null, ShadowCastingMode.Off);
+        Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, batchMatrices.sNodeMats, N, null, ShadowCastingMode.Off);
+        //Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, graphBatchData.sNodes[currentDay]);
     }
 }
 
