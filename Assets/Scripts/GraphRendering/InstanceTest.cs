@@ -35,6 +35,10 @@ public class InstanceTest : MonoBehaviour
         foreach (List<Matrix4x4> batch in batches)
         {
             Graphics.DrawMeshInstanced(mesh, 0, material, batch);
+            //foreach (Matrix4x4 matrix4X4 in batch)
+            //{
+            //    Graphics.DrawMesh(mesh, matrix4X4, material, 0);
+            //}
         }
     }
 
@@ -51,6 +55,6 @@ public class InstanceTest : MonoBehaviour
 
     private Matrix4x4 MakeMatrix()
     {
-        return Matrix4x4.TRS(Random.insideUnitSphere * radius, Random.rotationUniform, Random.value * Vector3.one);
+        return Matrix4x4.TRS(Random.insideUnitSphere * radius + 1.5f * radius * Vector3.forward, Random.rotationUniform, Random.value * Vector3.one);
     }
 }

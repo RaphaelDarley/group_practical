@@ -9,6 +9,8 @@ using static OVRPlugin;
 using UnityEngine.Rendering;
 using UnityEngine.Assertions;
 using System.Runtime.CompilerServices;
+using Meta.XR.ImmersiveDebugger.UserInterface.Generic;
+using UnityEngine.UI;
 
 
 public class Transaction
@@ -149,7 +151,9 @@ public class WLUNA : MonoBehaviour
 
     [Header("GameObjects")]
     public TextMeshProUGUI timeLabel;
-    private GameObject graphParent;
+    public Transform graphParent;
+    public Transform uiObject;
+    public GameObject timeSlider;
 
     [Header("Settings")]
     public float nodeSize;
@@ -167,10 +171,13 @@ public class WLUNA : MonoBehaviour
 
     // Most to be filled in at runtime
     [Header("Time Variables")]
-    private float graphTime = 0;
-    private int currentDay = 0;
+    private float graphTime = 0.5f;
+    public int currentDay = 0;
     public float timeSpeed;
     private float timeLength;
+    public bool autoTime;
+    public float spawnRadius;
+
 
 
     // Start is called before the first frame update
@@ -194,6 +201,11 @@ public class WLUNA : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (autoTime)
+        {
+            IncrementTime();
+        }
+
         RenderGraph();
     }
 
@@ -202,9 +214,6 @@ public class WLUNA : MonoBehaviour
 
     private void InitialiseWLUNA()
     {
-        graphParent = new GameObject("WLUNAGraph");
-        graphParent.transform.parent = this.transform;
-
         LoadWLUNAData();
     }
 
@@ -412,8 +421,8 @@ public class WLUNA : MonoBehaviour
     Vector3 GetRandomPosition()
     {
         //return new Vector3(UnityEngine.Random.Range(-10f, -2f), UnityEngine.Random.Range(-1f, 3f), UnityEngine.Random.Range(0.5f, 10f));
-        Vector3 pos = UnityEngine.Random.insideUnitSphere * 10f;
-        return pos + 6f * Vector3.left;
+        Vector3 pos = UnityEngine.Random.insideUnitSphere;
+        return pos;// + 6f * Vector3.left;
     }
 
 
@@ -431,11 +440,18 @@ public class WLUNA : MonoBehaviour
         {
             Vector3 pos = graphBatchData.nodePos[i];
             Quaternion rot = graphBatchData.nodeRot[i];
+
+            pos *= spawnRadius;
+
             float dScale = (1 - t) * graphBatchData.dNodes[currentDay][i] + t * graphBatchData.dNodes[nextDay][i];
             float sScale = (1 - t) * graphBatchData.sNodes[currentDay][i] + t * graphBatchData.sNodes[nextDay][i];
             float rScale = (1 - t) * graphBatchData.rNodes[currentDay][i] + t * graphBatchData.rNodes[nextDay][i];
 
-
+            dScale *= nodeSize;
+            rScale *= nodeSize;
+            sScale *= nodeSize;
+            
+            
             batchMatrices.dNodeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(dScale, dScale, dScale));
             batchMatrices.sNodeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(sScale, sScale, sScale));
             batchMatrices.rNodeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(rScale, rScale, rScale));
@@ -447,15 +463,21 @@ public class WLUNA : MonoBehaviour
             Vector3 pos = graphBatchData.edgePos[i];
             Quaternion rot = graphBatchData.edgeRot[i];
             float length = graphBatchData.edgeLengths[i];
+
+            pos *= spawnRadius;
+            length *= spawnRadius;
+
             float scale = (1 - t) * graphBatchData.edgeScales[currentDay][i] + t * graphBatchData.edgeScales[nextDay][i];
+
+            scale *= edgeThickness;
 
             batchMatrices.edgeMats[i] = Matrix4x4.TRS(pos, rot, new Vector3(scale, length, scale));
         }
 
-        Graphics.DrawMeshInstanced(edgeMesh, 0, defaultMat, batchMatrices.edgeMats, E, null, ShadowCastingMode.Off);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, defaultMat, batchMatrices.dNodeMats, N, null, ShadowCastingMode.Off);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, greenMat, batchMatrices.rNodeMats, N,null, ShadowCastingMode.Off);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, batchMatrices.sNodeMats, N, null, ShadowCastingMode.Off);
+        Graphics.DrawMeshInstanced(edgeMesh, 0, defaultMat, batchMatrices.edgeMats, E, null, ShadowCastingMode.Off, true);
+        Graphics.DrawMeshInstanced(nodeMesh, 0, defaultMat, batchMatrices.dNodeMats, N, null, ShadowCastingMode.Off, true);
+        Graphics.DrawMeshInstanced(nodeMesh, 0, greenMat, batchMatrices.rNodeMats, N,null, ShadowCastingMode.Off, true);
+        Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, batchMatrices.sNodeMats, N, null, ShadowCastingMode.Off, true);
         //Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, graphBatchData.sNodes[currentDay]);
     }
 
@@ -470,6 +492,9 @@ public class WLUNA : MonoBehaviour
             currentDay = (currentDay + 1) % 16;
             UpdateLabel();
         }
+
+        timeSlider.GetComponent<UnityEngine.UI.Slider>().value = graphTime;
+
     }
 
     public void DecrementTime()
@@ -478,7 +503,7 @@ public class WLUNA : MonoBehaviour
 
         if (graphTime < 0f)
         {
-            graphTime = timeLength;
+            graphTime = timeLength - Time.deltaTime;
             currentDay--;
             if (currentDay < 0)
             {
@@ -486,12 +511,39 @@ public class WLUNA : MonoBehaviour
             }
             UpdateLabel();
         }
+
+        timeSlider.GetComponent<UnityEngine.UI.Slider>().value = graphTime;
     }
 
     private void UpdateLabel()
     {
-        string time = sortedDates[currentDay].ToString("dd-mm-yyyy");
-        timeLabel.text = time;
+        string time = sortedDates[currentDay].ToString("dd-MM-yyyy");
+        string text = "Showing Transactions for: " + time;
+        timeLabel.text = text;
+    }
+
+    public void ChangeNodeSize(float val)
+    {
+        this.nodeSize = val;
+    }
+
+    public void ChangeEdgeSize(float val)
+    {
+        this.edgeThickness = val;
+    }
+
+    public void ChangeSpawnRadius(float val)
+    {
+        this.spawnRadius = val;
+        this.uiObject.position = spawnRadius * 1.3f * Vector3.back;
+    }
+
+    public void ChangeTimeSpeed(float val)
+    {
+        this.timeSpeed = val;
+        this.timeLength = 1f / timeSpeed;
+
+        timeSlider.GetComponent<UnityEngine.UI.Slider>().maxValue = timeLength;
     }
 }
 
