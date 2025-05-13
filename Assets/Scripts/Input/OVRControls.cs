@@ -14,6 +14,7 @@ public class OVRControls : MonoBehaviour
     public Transform vrMenuPosition;
 
     public GameObject wlunaGraph;
+    public GameObject pcaGraph;
 
     [Header("Settings")]
     public float moveSpeed;
@@ -41,6 +42,7 @@ public class OVRControls : MonoBehaviour
         UpdateZoom();
 
         UpdateWLUNA();
+        UpdatePCA();
 
         UpdateMenu();
     }
@@ -48,17 +50,24 @@ public class OVRControls : MonoBehaviour
     // ============================== MOVEMENT ====================================================
 
 
+    public void ResetPlayer(bool v)
+    {
+        vrUser.position = Vector3.zero;
+        vrUser.rotation = Quaternion.identity;
+    }
+
+
     // Move user relative to the plane spanned by the camera view
     void MoveUser()
     {
 
-        // potentially reset camera and position
-        if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick))
-        {
-            vrUser.position = Vector3.zero;
-            vrUser.rotation = Quaternion.identity;
-            pitch = 0.0f;
-        }
+        //// potentially reset camera and position
+        //if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick))
+        //{
+        //    vrUser.position = Vector3.zero;
+        //    vrUser.rotation = Quaternion.identity;
+        //    pitch = 0.0f;
+        //}
 
         Vector2 vector = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick);
 
@@ -247,7 +256,13 @@ public class OVRControls : MonoBehaviour
     }
 
 
-
+    private void UpdatePCA()
+    {
+        if (OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
+        {
+            pcaGraph.GetComponent<PCASpawner>().CycleSectors();
+        }
+    }
 
     // ==========================================================================================================
 

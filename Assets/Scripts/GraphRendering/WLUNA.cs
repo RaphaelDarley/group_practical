@@ -547,6 +547,20 @@ public class WLUNA : MonoBehaviour
 
         graphTime = 0.0f;
     }
+
+    public void ResetWLUNA(bool v)
+    {
+        graphTime = 0f;
+        currentDay = 0;
+
+        nodeSize = 1f;
+        edgeThickness = 1f;
+
+        ChangeTimeSpeed(0.4f);
+
+        spawnRadius = 10f;
+
+    }
 }
 
 #nullable enable
