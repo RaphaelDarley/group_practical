@@ -152,7 +152,6 @@ public class WLUNA : MonoBehaviour
     [Header("GameObjects")]
     public TextMeshProUGUI timeLabel;
     public Transform graphParent;
-    public Transform uiObject;
     public GameObject timeSlider;
 
     [Header("Settings")]
@@ -535,7 +534,6 @@ public class WLUNA : MonoBehaviour
     public void ChangeSpawnRadius(float val)
     {
         this.spawnRadius = val;
-        this.uiObject.position = spawnRadius * 1.3f * Vector3.back;
     }
 
     public void ChangeTimeSpeed(float val)
