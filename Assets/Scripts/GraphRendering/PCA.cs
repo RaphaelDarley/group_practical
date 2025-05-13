@@ -44,9 +44,9 @@ public class PCASpawner : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        graph = new GameObject("pca_graph");
+        //graph = new GameObject("pca_graph");
 
-        graph.transform.parent = this.transform.parent;
+        //graph.transform.parent = this.transform.parent;
 
         // Load data file
         // TextAsset file = Resources.Load(filepath) as TextAsset;

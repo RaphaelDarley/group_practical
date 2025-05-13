@@ -544,6 +544,8 @@ public class WLUNA : MonoBehaviour
         this.timeLength = 1f / timeSpeed;
 
         timeSlider.GetComponent<UnityEngine.UI.Slider>().maxValue = timeLength;
+
+        graphTime = 0.0f;
     }
 }
 
