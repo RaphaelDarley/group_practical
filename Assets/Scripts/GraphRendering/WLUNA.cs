@@ -146,7 +146,9 @@ public class WLUNA : MonoBehaviour
     public Material defaultMat;
 
     [Header("Meshes")]
-    public UnityEngine.Mesh nodeMesh;
+    public UnityEngine.Mesh dNodeMesh;
+    public UnityEngine.Mesh sNodeMesh;
+    public UnityEngine.Mesh rNodeMesh;
     public UnityEngine.Mesh edgeMesh;
 
     [Header("GameObjects")]
@@ -188,10 +190,10 @@ public class WLUNA : MonoBehaviour
         {
             Debug.Log("One or more materials is null");
         }
-        if (nodeMesh == null | edgeMesh == null)
-        {
-            Debug.Log("One or more meshes is null");
-        }
+        //if (nodeMesh == null | edgeMesh == null)
+        //{
+        //    Debug.Log("One or more meshes is null");
+        //}
 
         InitialiseWLUNA();
         UpdateLabel();
@@ -474,9 +476,9 @@ public class WLUNA : MonoBehaviour
         }
 
         Graphics.DrawMeshInstanced(edgeMesh, 0, defaultMat, batchMatrices.edgeMats, E, null, ShadowCastingMode.Off, true);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, defaultMat, batchMatrices.dNodeMats, N, null, ShadowCastingMode.Off, true);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, greenMat, batchMatrices.rNodeMats, N,null, ShadowCastingMode.Off, true);
-        Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, batchMatrices.sNodeMats, N, null, ShadowCastingMode.Off, true);
+        Graphics.DrawMeshInstanced(dNodeMesh, 0, defaultMat, batchMatrices.dNodeMats, N, null, ShadowCastingMode.Off, true);
+        Graphics.DrawMeshInstanced(rNodeMesh, 0, greenMat, batchMatrices.rNodeMats, N,null, ShadowCastingMode.Off, true);
+        Graphics.DrawMeshInstanced(sNodeMesh, 0, redMat, batchMatrices.sNodeMats, N, null, ShadowCastingMode.Off, true);
         //Graphics.DrawMeshInstanced(nodeMesh, 0, redMat, graphBatchData.sNodes[currentDay]);
     }
 
