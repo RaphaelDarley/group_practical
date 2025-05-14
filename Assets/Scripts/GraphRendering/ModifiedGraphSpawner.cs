@@ -22,6 +22,7 @@ public class UnifiedGraphSpawner : MonoBehaviour
     public GameObject PosPrefab;
     public GameObject NegPrefab;
 
+    private GameObject stablecoinGraph;
 
     // === STABLECOIN GRAPH SETTINGS ===
     public float MinLineThickness = 0.05f;
@@ -49,9 +50,10 @@ public class UnifiedGraphSpawner : MonoBehaviour
             return;
         }
 
-        GameObject stablecoinGraph = new GameObject("StablecoinGraph");
-        stablecoinGraph.transform.parent = this.transform.parent;
+        stablecoinGraph = new GameObject("StablecoinGraph");
         RenderStablecoinGraph(stablecoinFilepath, stablecoinGraph);
+
+        stablecoinGraph.transform.position = new Vector3(100f, -30f, -20f);
 
         //StartCoroutine(LoadAndRenderGraph(transactionFilepath));
     }
@@ -131,5 +133,8 @@ public class UnifiedGraphSpawner : MonoBehaviour
         meshRenderer.material = graphMat;
     }
 
-
+    private void Update()
+    {
+        //stablecoinGraph.transform.position = Vector3.zero;
+    }
 }

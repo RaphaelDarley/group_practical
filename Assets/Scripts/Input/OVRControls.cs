@@ -52,7 +52,7 @@ public class OVRControls : MonoBehaviour
 
     public void ResetPlayer(bool v)
     {
-        vrUser.position = Vector3.zero;
+        vrUser.localPosition = Vector3.zero;
         vrUser.rotation = Quaternion.identity;
     }
 

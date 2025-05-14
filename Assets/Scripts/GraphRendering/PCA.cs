@@ -155,11 +155,11 @@ public class CompanyInfo
         return new Vector3(pca_0, pca_1, pca_2);
     }
 
-    private Vector3 offsetPos = new Vector3(-20f, 0f, -10f);
+    private Vector3 offsetPos = new Vector3(-50f, 0f, -10f);
 
     public Matrix4x4 Node(float positionScale)
     {
-        return Matrix4x4.TRS(positionScale * Position() + offsetPos, Quaternion.identity, 0.1f * Vector3.one);
+        return Matrix4x4.TRS(12f * positionScale * Position() + offsetPos, Quaternion.identity, 0.3f * Vector3.one);
     }
 
     void Process()

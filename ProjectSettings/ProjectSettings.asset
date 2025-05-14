@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: Demo
-  productName: Demo
+  companyName: OxAM
+  productName: OxAM VR Demo 2025
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -140,9 +140,12 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 0.1
+  bundleVersion: 1.0
   preloadedAssets:
   - {fileID: 11400000, guid: 589976f0e7fa2cf41ad137eb0d102a50, type: 2}
+  - {fileID: 11400000, guid: 0afa93b2a0741004a90b11b1db4624b6, type: 2}
+  - {fileID: -3528149551564294933, guid: a4ee6b274e9082c47aec0fcbf9f18cb0, type: 2}
+  - {fileID: -4814546996544322801, guid: 1f1f7723d16e5244eba98e6864babd2e, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -163,7 +166,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: com.Demo.Demo
+    Android: com.OxAM.OxAMVRDemo2025
   buildNumber:
     Standalone: 0
     VisionOS: 0
